@@ -1,9 +1,9 @@
 ---
 feature_code: FEAT-001
 service: sample-project
-version: 9
+version: 10
 status: complete
-pr_url: https://github.com/william22913/test-docs/pull/1
+pr_url: https://github.com/william22913/test-docs/pull/6
 completeness:
   problem: covered
   target_user: covered
@@ -18,7 +18,7 @@ sources:
     source_version: "1.0"
     note: The SRD for the Teacher Management Module (Teacher CRUD) — business objectives, user roles, functional CRUD rules, the TEACHER entity, and the use-case flow. Primary source for this feature; every claim in this spec traces to it unless marked otherwise.
 architect_feedback: []
-last_updated: 2026-09-28
+last_updated: 2026-09-29
 ---
 
 # FEAT-001 — Teacher CRUD
@@ -188,6 +188,18 @@ lines are tunable defaults, not requirements.
 36. **[new]** The check is enforced server-side. A client cannot bypass it by
     omitting a token or version value.
 
+### Field constraints
+
+37. **[new]** A text field receiving a non-ASCII value → rejected, and the error
+    names the offending field. Applies to names as well as `Email`.
+38. **[new]** `Email` is persisted lowercased: creating with `Teacher@School.EDU`
+    stores and returns `teacher@school.edu`, and a later create with
+    `TEACHER@SCHOOL.EDU` is rejected as a duplicate.
+39. **[new]** A value exceeding its field's max length → rejected, and the error
+    names the offending field. A value exactly at the max is accepted.
+40. **[new]** An education `score` with more than 2 decimal places → rejected, not
+    rounded; the stored value is unchanged.
+
 ### Deferred — no authentication or roles this phase
 
 The user confirmed this session that neither teacher accounts nor an administrator
@@ -317,8 +329,9 @@ Each row records, for one institution:
 - **Institution level** — high school, university, etc. An explicit field on the
   row, not inferred from the institution name.
 - **Study start and end date** — the range the teacher studied there.
-- **Score** — a numeric score on a **0–100** scale. A score outside that range is
-  rejected. (source: user, this session)
+- **Score** — a numeric score on a **0–100** scale, carrying **at most 2 decimal
+  places**. A score outside the range, or one with finer precision, is rejected.
+  (source: user, this session; lengths and character rules in Field constraints)
 - **Focused subject** — a free-text marker of what the teacher specialized in *at
   that institution*. The user's example: *Informatics Engineering* at university,
   *Science* at high school. This is deliberately **not** a reference to the school's
@@ -381,12 +394,66 @@ Consequences worth noting for whoever implements this:
 
 ## Contact fields
 
-- **`Email`** — required, unique across the entire database (source: SRD §4.1).
-- **`Phone_Number`** — **nullable**, and validated against the project's phone-number
-  regex when a value is present. (source: user, this session)
+- **`Email`** — required, unique across the entire database, max 50 characters,
+  ASCII only, stored lowercased. (source: SRD §4.1; source: user, this session)
+- **`Phone_Number`** — **nullable**, max 50 characters, and validated against the
+  project's phone-number regex when a value is present. (source: user, this session)
   **(unresolved)** The regex pattern itself is not restated in this spec — the user
   noted the development side already holds it. `/architect` should source the pattern
   from the implementation rather than inventing a second one here.
+
+Lengths and character rules for every field are collected once, in Field constraints.
+
+## Field constraints
+
+Length and character rules for every field, stated once here — the narrative
+sections elsewhere describe behaviour, not limits. Confirmed by the user this
+session (source: user, this session) unless another source is named.
+
+| Field | Max | Charset | Enforced at |
+| :--- | :--- | :--- | :--- |
+| `First_Name` | 50 (min 2) | ASCII | validator + DB |
+| `Last_Name` | 50 (min 2) | ASCII | validator + DB |
+| `Email` | 50 | ASCII | validator + DB |
+| `Phone_Number` | 50 | ASCII | validator + DB |
+| `Teacher_ID` (`teacher_code`) | 20 | ASCII | system-generated |
+| `Institution` | 100 | ASCII | validator + DB |
+| `Focused_Subject` | 100 | ASCII | validator + DB |
+| `institution_levels.name` | 50 | ASCII | seeded, never user input |
+| Education `score` | 0–100, max 2 decimals | numeric | validator + DB `CHECK` |
+
+Notes:
+
+- **Max lengths are inclusive** — a 50-character `Email` is valid, 51 is rejected.
+- **ASCII only, all text fields.** A non-ASCII value is rejected with a field-level
+  error. This applies to names as well as `Email` — no accented characters and no
+  non-Latin scripts in this phase. (source: user, this session)
+- **`Email` is stored lowercased.** The case-insensitive uniqueness index
+  (`lower(email)`) already enforces this at the database; the API normalizes to
+  lowercase before persisting, so the stored value and the compared value agree
+  rather than relying on the index alone. (source: user, this session; see
+  success criteria 3, 30, 38)
+- **Education `score` carries at most 2 decimals.** A value with finer precision
+  (e.g. `87.125`) is **rejected**, not rounded — matching the spec's reject-don't-
+  coerce pattern elsewhere. `3.75` round-trips exactly. (source: user, this session;
+  see criterion 25)
+- **Enforcement is at both layers** — DTO validation for the human-readable message,
+  and the database (`VARCHAR` caps, `CHECK`, `UNIQUE`) as the backstop that cannot be
+  bypassed. This extends the pattern already used for email uniqueness (criterion 30)
+  and field rules (criterion 4). (source: user, this session)
+
+**Deviation from the SRD.** SRD §5 gives `email VARCHAR(100)` and `phone
+VARCHAR(20)`. The user's ruling this session is **50 for both**, which supersedes the
+SRD — consistent with how this spec already supersedes it on the status enum and the
+Subject/Class/Student links. Consequences for `/architect`'s `database.md`:
+`email` 100→50, `phone` 20→50, and `institution` / `focused_subject` 150→100 to match
+the caps above. (source: SRD §5; source: user, this session)
+
+**No `Education notes` field.** The architect's feedback referenced "education
+notes". No such field exists in this spec, and the user confirmed this session it was
+never requested. An education row carries Institution, Institution level, study
+start/end dates, Score, and Focused subject — nothing else. Recorded so it is not
+raised again.
 
 ## Edge cases
 

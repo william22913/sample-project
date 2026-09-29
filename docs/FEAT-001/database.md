@@ -1,9 +1,9 @@
 ---
 feature_code: FEAT-001
 service: sample-project
-version: 3
+version: 4
 status: complete
-spec_version: 9
+spec_version: 10
 sources:
   - path: knowledge/system_requirement_document.md
     source_version: "1.0"
@@ -49,7 +49,9 @@ mechanical reason, not a preference:
 | :--- | :--- | :--- |
 | `uuid_key` | all three tables | House convention (`database-design-standards`: every table carries one) **and**, on `teachers`, a hard requirement — `audit_helper`'s before-snapshot query selects `uuid_key` by literal name. On the other two tables nothing reads it today; it is convention, kept because it is cheap and a stable external identifier is worth owning before an API shape exists. |
 | `deleted` | `teachers` **only** | `GetDataForAuditByIDTx` filters `deleted = false` for every non-delete action. Forced by the library. |
-| `version` | `teachers` | The concurrency mechanism (criteria 35–36). |
+
+`updated_at` (on `teachers`) doubles as the optimistic-concurrency token
+(criteria 35–36) — see the column notes. No separate `version` column exists.
 
 `uuid_key` is `UUID NOT NULL DEFAULT gen_random_uuid()`. This needs
 `pgcrypto` on PostgreSQL < 13; on 13+ it is built in. Confirm the target
@@ -87,11 +89,10 @@ erDiagram
         varchar   teacher_code UK "TCH-<hire_year>-<id>; trigger-assigned; immutable"
         varchar   first_name      "2-50; lower bound is app-only"
         varchar   last_name       "2-50; lower bound is app-only"
-        varchar   email           "unique on lower(email) - see N1"
-        varchar   phone           "NULLABLE; +CC-... form only"
+        varchar   email           "VARCHAR(50); unique on lower(email) - see N1; stored lowercased (crit 38)"
+        varchar   phone           "VARCHAR(50) NULLABLE; +CC-... form only"
         date      hire_date       "immutable per criterion 15"
         varchar   status          "CHECK ACTIVE|ON_LEAVE|INACTIVE; DEFAULT ACTIVE"
-        integer   version         "optimistic lock; CHECK version >= 1"
         boolean   deleted         "audit_helper filter; never set true"
         bigint    created_by      "always NULL this phase (no auth)"
         bigint    updated_by      "always NULL this phase (no auth)"
@@ -155,7 +156,7 @@ rediscovered later as surprises.
 | N11 | Reuse survey claimed `deleted` on both tables | MEDIUM | **Fixed** — survey v1.1 scopes it to `teachers` |
 | N2 | `teachers.deleted` is a dead second delete flag | MEDIUM | **Kept** (library-forced); documented + `COMMENT ON COLUMN` |
 | N3 | `idx_teachers_deleted` had no selectivity | LOW | **Fixed** — dropped |
-| N9 | `teachers.version` had no lower bound | LOW | **Fixed** — `CHECK (version >= 1)` |
+| N9 | (resolved by design choice) `updated_at`, not a `version` column, is the optimistic-concurrency token | LOW | **Fixed** — no `version` column exists; the stale-write check compares `updated_at`, matching the nexcommon convention (see survey §7). The prior `CHECK (version >= 1)` is gone with the column. |
 | N4 | `uuid_key` unused on two tables | LOW | **Kept** — house convention, cheap, documented |
 | N5 | `teacher_code` is derivable from `(id, hire_date)` | LOW | **Kept** — deliberate denormalization, safe because `hire_date` is immutable |
 | N6 | `institution` / `focused_subject` are free text | LOW | **Kept** — spec-mandated |
@@ -256,11 +257,10 @@ CREATE TABLE IF NOT EXISTS "teachers" (
     teacher_code            VARCHAR(20) NOT NULL,
     first_name              VARCHAR(50) NOT NULL,
     last_name               VARCHAR(50) NOT NULL,
-    email                   VARCHAR(100) NOT NULL,
-    phone                   VARCHAR(20) NULL,
+    email                   VARCHAR(50) NOT NULL,
+    phone                   VARCHAR(50) NULL,
     hire_date               DATE NOT NULL,
     status                  VARCHAR(10) NOT NULL DEFAULT 'ACTIVE',
-    version                 INTEGER NOT NULL DEFAULT 1,
     deleted                 BOOLEAN NOT NULL DEFAULT FALSE,
     created_by              BIGINT NULL,
     updated_by              BIGINT NULL,
@@ -269,8 +269,7 @@ CREATE TABLE IF NOT EXISTS "teachers" (
     CONSTRAINT pk_teachers_id PRIMARY KEY (id),
     CONSTRAINT uq_teachers_uuidkey UNIQUE (uuid_key),
     CONSTRAINT uq_teachers_teachercode UNIQUE (teacher_code),
-    CONSTRAINT ck_teachers_status CHECK (status IN ('ACTIVE', 'ON_LEAVE', 'INACTIVE')),
-    CONSTRAINT ck_teachers_version CHECK (version >= 1)
+    CONSTRAINT ck_teachers_status CHECK (status IN ('ACTIVE', 'ON_LEAVE', 'INACTIVE'))
 );
 
 -- Case-insensitive uniqueness (N1). This REPLACES a plain UNIQUE (email).
@@ -296,26 +295,34 @@ exist, and `Inactive` is the soft-delete state. `VARCHAR(10)` + `CHECK` rather
 than a Postgres `ENUM` type: adding a status later is an `ALTER TABLE ... DROP
 CONSTRAINT / ADD CONSTRAINT`, no type migration.
 
-**`email` uniqueness is the enforcement point** (criteria 3 and 30), via
-`uq_teachers_email_lower`. See N1 — the application-level pre-check is a UX
-nicety for the error message, not the guarantee, and must query
+**`email` uniqueness is the enforcement point** (criteria 3 and 30, and now 38),
+via `uq_teachers_email_lower`. The spec v10 field-constraints section makes the
+email **persisted lowercased** (criterion 38), so the API normalizes to lowercase
+before writing and the stored value agrees with the `lower(email)` index rather
+than leaning on the index alone. See N1 — the application-level pre-check is a
+UX nicety for the error message, not the guarantee, and must query
 `lower(email) = lower($1)` to use the index.
 
-**`version`** — optimistic concurrency (criteria 35–36). Integer, starts at 1,
-incremented on every real write. Chosen over an ETag or a conditional
-`updated_at` compare because it is monotonic, needs no clock agreement, and
-cannot be bypassed by a client that omits it — the expected value is matched
-against the row the UPDATE targets. Enforcement shape:
+**Optimistic concurrency via `updated_at`, not a `version` column**
+(criteria 35–36). The spec leaves the mechanism to `/architect`; the chosen
+convention is the nexcommon one — compare the `updated_at` the client read
+against the row's current `updated_at` in a conditional `UPDATE`. No `version`
+column exists. A client cannot bypass the check by omitting the value: the
+expected `updated_at` is matched against the row the `UPDATE` targets, so an
+omitted value matches nothing (criterion 36). Enforcement shape:
 
 ```sql
 UPDATE teachers
-   SET <fields>, version = version + 1, updated_at = CURRENT_TIMESTAMP
- WHERE id = $1 AND version = $expected_version;
+   SET <fields>, updated_at = CURRENT_TIMESTAMP
+ WHERE id = $1 AND updated_at = $client_updated_at;
 ```
 
 Zero rows affected means a stale write. The service must read back the current
 record and return it alongside the conflict so the losing administrator can
 re-fetch (criterion 35). The check is server-side by construction (criterion 36).
+The error returned is the library's `error.ErrDataLocked` (`E-4-CMD-DTO-007`,
+HTTP 400, names the field via `errFieldNameConverter`) — see the reuse survey
+§7. This is the team's shared concurrency error, not one this feature invents.
 
 **`updated_at` on real change only** (criterion 17). Not enforceable by the
 UPDATE above, which sets it unconditionally. The service must diff the incoming
@@ -338,11 +345,11 @@ CREATE TABLE IF NOT EXISTS "teacher_education_histories" (
     uuid_key                UUID NOT NULL DEFAULT gen_random_uuid(),
     teacher_id              BIGINT NOT NULL,
     institution_level_id    BIGINT NOT NULL,
-    institution             VARCHAR(150) NOT NULL,
+    institution             VARCHAR(100) NOT NULL,
     study_start_date        DATE NOT NULL,
     study_end_date          DATE NOT NULL,
     score                   NUMERIC(5,2) NOT NULL,
-    focused_subject         VARCHAR(150) NOT NULL,
+    focused_subject         VARCHAR(100) NOT NULL,
     created_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_teachereducationhistories_id PRIMARY KEY (id),
@@ -373,6 +380,14 @@ requires a score to round-trip exactly — "3.75 stored reads back as 3.75, with
 no floating-point drift". `REAL`/`DOUBLE PRECISION` cannot guarantee that. In Go
 this maps to a decimal type, **not** `float64` — a `float64` round-trip through
 the driver reintroduces exactly the drift the criterion forbids.
+
+**Criterion 40 — reject, not round.** Spec v10 adds: a score with more than 2
+decimal places is **rejected, not rounded**. `NUMERIC(5,2)` alone would *silently
+round* `87.125` → `87.13`, which violates criterion 40. So the column type
+guarantees the round-trip (criterion 25), but the **2-decimal ceiling is enforced
+by the DTO validator**, which rejects finer precision before it reaches the
+column. The column cannot express the rejection on its own; the validator is not
+optional here.
 
 **The score range is enforced twice, deliberately.** The `CHECK` (criterion 28)
 is the guarantee; the DTO validator produces the field-level error message the
@@ -644,7 +659,7 @@ migration file.
 | # | Check | Expected |
 | :--- | :--- | :--- |
 | 1.1 | Migration runner exits 0, all statements applied | — |
-| 1.2 | Inspect `teachers` | PK, unique on `uuid_key` / `teacher_code` / `lower(email)`, `ck_teachers_status`, `ck_teachers_version`, `idx_teachers_status` |
+| 1.2 | Inspect `teachers` | PK, unique on `uuid_key` / `teacher_code` / `lower(email)`, `ck_teachers_status`, `idx_teachers_status`. **No `version` column, no `ck_teachers_version`** — `updated_at` is the concurrency token |
 | 1.3 | Inspect `teacher_education_histories` | both FKs, `ck_..._score`, `ck_..._daterange`, both indexes |
 | 1.4 | Insert a teacher omitting `teacher_code` | succeeds; code is `TCH-<hire_year>-<zero-padded id>` — confirms `NEW.id` is populated before the trigger |
 | 1.5 | Insert the same email twice, exact match | second rejected `23505` |
@@ -679,11 +694,14 @@ only in application code are listed too — that is where the risk is.
 | C27 | Education row deletion removes only that row | No cascade from teacher; explicit delete by id |
 | C28 | Score outside 0–100 rejected | `ck_teachereducationhistories_score` |
 | C29 | Future end date rejected | **App only** — `CHECK` cannot use `CURRENT_DATE` |
-| C30 | Email uniqueness under concurrency | `uq_teachers_email_lower`, DB-enforced by design |
-| C35/C36 | Stale write rejected, server-side | `version` column + conditional `UPDATE` |
+| C37 | Non-ASCII text rejected, names field | **App only** — DTO validator; no DB charset constraint (Postgres has no per-column ASCII `CHECK` that doesn't punish perf; the `VARCHAR` cap is the DB's only text backstop) |
+| C38 | Email persisted lowercased | API normalizes to lowercase before persist; agrees with `uq_teachers_email_lower` |
+| C39 | Over-max-length rejected, at-max accepted | `VARCHAR` caps (DB backstop) + DTO validator (field-level error); 50/100/20 caps per spec v10 |
+| C40 | Score >2 decimals rejected, not rounded | **App only** — `NUMERIC(5,2)` would silently round; the DTO validator rejects finer precision before it reaches the column |
+| C30, C38 | Email uniqueness under concurrency; email stored lowercased | `uq_teachers_email_lower`, DB-enforced by design; API lowercases before persist |
+| C35/C36 | Stale write rejected, server-side | `updated_at`-compare conditional `UPDATE ... WHERE id = $1 AND updated_at = $client`; zero rows → `ErrDataLocked` (`E-4-CMD-DTO-007`) |
 | Date rule | Start precedes end | `ck_teachereducationhistories_daterange` |
 | — | Status is one of three values | `ck_teachers_status` |
-| — | Version is never nonsense | `ck_teachers_version` |
 
 ## Open items carried into implementation
 

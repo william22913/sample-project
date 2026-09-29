@@ -1,9 +1,9 @@
 ---
 feature_code: FEAT-001
 service: sample-project
-version: 3
+version: 4
 status: complete
-spec_version: 9
+spec_version: 10
 sources:
   - path: knowledge/system_requirement_document.md
     source_version: "1.0"
@@ -153,18 +153,27 @@ proposed.
   in `database.md`. Making levels admin-editable would be a **separate feature**
   with its own endpoints — explicitly out of scope here.
 
-### A5 — Concurrency: an optimistic `version` column
+### A5 — Concurrency: optimistic lock via `updated_at`, not a `version` column
 
 - **Options.** (a) `version` integer; (b) `ETag`/`If-Match`; (c) compare
   `updated_at`; (d) a conditional write on field values.
-- **Chosen: (a).** The spec's Open question 5 explicitly leaves this to
-  `/architect`; criteria 35–36 only state the requirement.
-- **Why:** monotonic, needs no clock agreement between administrators, and
-  cannot be bypassed by a client that omits it — the expected value is matched
-  against the row the `UPDATE` targets, so an omitted version simply matches
+- **Chosen: (c) — compare `updated_at`.** The spec's Open question 5 leaves the
+  mechanism to `/architect`; criteria 35–36 only state the requirement. This is
+  the nexcommon convention: the client re-presents the `updated_at` it read, and
+  a conditional `UPDATE ... WHERE id = $1 AND updated_at = $client_updated_at`
+  either changes one row (current) or zero rows (stale).
+- **Why the `version` column was dropped:** it is not how this team's code does
+  optimistic locking. The shared library exposes `error.ErrDataLocked`
+  (`E-4-CMD-DTO-007`, HTTP 400, names the field via `errFieldNameConverter`) for
+  exactly the zero-rows-affected case — see the reuse survey §7. A separate
+  `version` column would be a second concurrency mechanism alongside the one the
+  library already supports, and the spec asks for one mechanism, not two. A
+  client cannot bypass the check by omitting the value: the expected `updated_at`
+  is matched against the row the `UPDATE` targets, so an omitted value matches
   nothing (criterion 36). Full mechanism in `database.md`.
-- **Rejected:** (c) is the weakest — two writes inside one timestamp tick would
-  pass a stale check.
+- **Rejected:** (a) the `version` column — not the team convention, and
+  redundant once `updated_at` already carries monotonic change. (d) conditional
+  write on field values is the implicit form of (c) and adds nothing.
 
 ## HTTP surface
 
@@ -304,7 +313,7 @@ marked **[deferred]** are deferred by the spec itself and are carried here as
 
 **Concurrency**
 
-- **C35** a write based on a stale read is rejected and returns the current record — conditional `UPDATE ... WHERE id = $1 AND version = $expected`; zero rows affected → conflict response carrying the current record so the loser can re-fetch.
+- **C35** a write based on a stale read is rejected and returns the current record — conditional `UPDATE ... WHERE id = $1 AND updated_at = $client_updated_at`; zero rows affected → `error.ErrDataLocked` (`E-4-CMD-DTO-007`) carrying the current record so the loser can re-fetch. Mechanism: A5.
 - **C36** enforced server-side; cannot be bypassed by omitting the token — the expected version is matched against the stored row, so an omitted version matches nothing rather than skipping the check.
 
 ### Primary flow

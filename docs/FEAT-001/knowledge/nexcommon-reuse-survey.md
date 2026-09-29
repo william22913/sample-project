@@ -1,8 +1,15 @@
 # nexcommon reuse survey — FEAT-001
 
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-09-28, amended 2026-09-29.
 **Surveyed against:** local clone at `C:\Users\Pongo\Documents\github\nexcommon`, `main` branch.
+
+> **Changelog — 1.2.** Adds §7 — `error.ErrDataLocked`. This error was present in
+> the library clone all along but was missing from the survey, so the original
+> architecture pass (v3) designed a `version` column instead of using the
+> library's concurrency error. The design has since been corrected to the
+> `updated_at`-compare convention; this section records the error so the next
+> pass does not re-miss it.
 
 > **Changelog — 1.1.** §1 previously stated the `uuid_key` *and* `deleted`
 > requirements were "both on `teachers` and `teacher_education_histories`". That
@@ -236,6 +243,44 @@ audited. The `uuid_key`/`deleted` requirement comes from `audit_helper`
 
 ---
 
+## 7. Optimistic-lock error — reused, not built
+
+**Location:** `error/message.go:18`, `error/type.go`
+
+```go
+var ErrDataLocked = NewUnBundledErrorMessages(400, errors.New("E-4-CMD-DTO-007"), errFieldNameConverter)
+```
+
+FEAT-001's success criteria 35–36 require a stale write to be rejected
+server-side. The zero-rows-affected case of a conditional `UPDATE` needs to
+surface as a real, actionable error the client understands — not a generic 500.
+nexcommon already defines that error: `ErrDataLocked`, HTTP 400, code
+`E-4-CMD-DTO-007`, using `errFieldNameConverter` (the same converter the other
+DTO field errors use — it takes the field name as its param, so the error names
+the offending field).
+
+**This is the team's optimistic-concurrency error.** The convention it implies:
+lock by comparing the `updated_at` the client read against the row's current
+`updated_at` in a conditional `UPDATE`; zero rows affected → return
+`ErrDataLocked`. **No `version` column** — the library's error exists for this
+pattern, and adding a `version` column would be a second mechanism alongside it.
+
+**Where it is used:** `database.md` A5 / the `teachers` column notes, and
+`architecture.md` C35. A previous version of the design (v3) proposed a
+`version INTEGER` column because this error was missed in the survey; v4 drops it
+in favour of the `updated_at` compare + `ErrDataLocked`.
+
+**Caveat — this survey only covers the local clone.** `ErrDataLocked` is present
+at `C:\Users\Pongo\Documents\github\nexcommon\error\message.go` but **not** in
+the public `github.com/william22913/common` mirror, which has only the six DTO
+errors (`ErrUnauthorized`, `ErrReservedValueString`, `ErrEmptyField`,
+`ErrUnknownData`, `ErrFormatFieldRule`, `ErrFormatField`). If
+`github.com/nexsoft-git/nexcommon` (the `go.mod` dependency) ever diverges from
+this local clone, re-confirm `ErrDataLocked`'s code/status there before relying
+on it.
+
+---
+
 ## 6. Things checked and deliberately *not* used
 
 | Found | Left alone because |
@@ -244,5 +289,5 @@ audited. The `uuid_key`/`deleted` requirement comes from `audit_helper`
 | `dto/in.GetMultipartDTO`, file-upload path | FEAT-001 has no file fields. |
 | `services/scheduler`, `limited_scheduler` | No scheduled work in this feature. |
 | `dao.GetListDataDAO` multi-database / sharding / Mongo | Single Postgres, single schema. The composition root should still be *checked* for a second (`PostgresqlView`) section before wiring, per `nexcommon-go-data-standards`. |
-| `error2.NewUnBundledErrorMessages` converter pattern | Only relevant once paramaterised/localized errors are needed; field-level validation errors (criteria 3, 4, 5, 28) will likely need it — flag at implementation time. |
+| `error2.NewUnBundledErrorMessages` converter pattern | Now used — `ErrDataLocked` (§7) and the field-level validation errors (criteria 3, 4, 5, 28) all flow through it. Flag was resolved by the v10 design pass. |
 | `regex.NAME_STANDARD` | Too strict for the spec's name rules — see §3. |
