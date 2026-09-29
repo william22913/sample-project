@@ -1,0 +1,537 @@
+openapi: 3.0.1
+info:
+  title: SDMS Teacher Management Documentation
+  version: 1.0.0
+  description: |
+    Teacher record management (create, read, update, deactivate) plus owned
+    education-history rows.
+
+    This spec is the complete contract for the feature's 8 routes. It started
+    from the framework-generated document at `GET /swagger/swagger.yaml`, which
+    is incomplete: nexcommon's controller resets a path's method map on every
+    registration (`controller/http/param.go`), so a path carrying two methods
+    loses the earlier one. Three operations here (POST /teachers,
+    GET /teachers/{id}, PUT /teachers/{id}/educations/{eduId}) were therefore
+    authored by hand from the route table and DTOs; each carries a `description`
+    note saying so.
+
+    All routes are registered with nexcommon's `WhitelistValidator`, so no
+    token is required and no `securitySchemes` entry applies to them.
+security: []
+servers:
+  - url: http://localhost:8081
+    description: Local
+tags:
+  - name: Teacher
+    description: Teacher records and their education history.
+paths:
+  /teachers:
+    post:
+      operationId: createTeacher
+      summary: Create teacher
+      description: |
+        Create a teacher, with optional embedded education rows in the same
+        transaction. Added by hand: the framework generator drops this operation
+        because GET /teachers is registered on the same path after it and resets
+        the path's method map.
+      tags:
+        - Teacher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherInsertIn'
+      responses:
+        '200':
+          description: Teacher created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTeacher'
+        '400':
+          $ref: '#/components/responses/Error'
+    get:
+      operationId: listTeachers
+      summary: List teachers
+      description: List, search, filter and paginate teachers.
+      tags:
+        - Teacher
+      parameters:
+        - in: query
+          name: page
+          required: true
+          description: Page number, min 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Page size. Default 20.
+          schema:
+            type: integer
+            enum: [20, 50, 100]
+            default: 20
+        - in: query
+          name: filter
+          required: false
+          description: |
+            Filter expression. Valid keys: `first_name`, `last_name`,
+            `teacher_code`, `status`. Operators: `eq` and `lk`. Examples:
+            `status eq ACTIVE`, `first_name lk ADA`,
+            `teacher_code eq TCH-2024-001`.
+
+            Quirk (intentional, spec criterion 33): `status eq ACTIVE` is
+            internally rewritten to an `in` filter and also matches `ON_LEAVE`
+            teachers. Valid `status` values are `ACTIVE`, `ON_LEAVE`,
+            `INACTIVE`.
+          schema:
+            type: string
+            example: status eq ACTIVE
+        - in: query
+          name: order
+          required: false
+          description: |
+            Order clause. Valid columns: `id`, `first_name`, `last_name`,
+            `teacher_code`, `created_at`, `updated_at`. Direction must be
+            exactly `ASC` or `DESC`; anything else (e.g. `ASCENDING`, `;--`)
+            is rejected with 400 `E-4-CMD-DTO-002`. Defaults to `id`.
+          schema:
+            type: string
+            example: first_name DESC
+        - in: query
+          name: connector
+          required: false
+          description: Boolean connector between filters. Default AND.
+          schema:
+            type: string
+            enum: [AND, OR]
+            default: AND
+      responses:
+        '200':
+          description: Array of teachers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTeacherList'
+        '400':
+          $ref: '#/components/responses/Error'
+  /teachers/{id}:
+    get:
+      operationId: getTeacher
+      summary: Teacher detail
+      description: |
+        Teacher detail including `educations[]` (an empty array when there is no
+        history). Added by hand: the framework generator drops this operation
+        because PUT /teachers/{id} is registered on the same path after it and
+        resets the path's method map.
+      tags:
+        - Teacher
+      parameters:
+        - $ref: '#/components/parameters/TeacherID'
+      responses:
+        '200':
+          description: Teacher detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTeacherDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: updateTeacher
+      summary: Update teacher
+      description: Update a teacher. Guarded by the `updated_at` optimistic lock; a stale value is rejected with `E-4-CMD-DTO-007`.
+      tags:
+        - Teacher
+      parameters:
+        - $ref: '#/components/parameters/TeacherID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherUpdateIn'
+      responses:
+        '200':
+          description: Teacher updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTeacher'
+        '400':
+          $ref: '#/components/responses/Error'
+  /teachers/{id}/deactivate:
+    post:
+      operationId: deactivateTeacher
+      summary: Deactivate teacher
+      description: Set the teacher's status to INACTIVE. Guarded by the `updated_at` optimistic lock.
+      tags:
+        - Teacher
+      parameters:
+        - $ref: '#/components/parameters/TeacherID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeactivateIn'
+      responses:
+        '200':
+          description: Teacher deactivated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTeacher'
+        '400':
+          $ref: '#/components/responses/Error'
+  /teachers/{id}/educations:
+    post:
+      operationId: addTeacherEducation
+      summary: Add teacher education
+      description: Add one education-history row to a teacher.
+      tags:
+        - Teacher
+      parameters:
+        - $ref: '#/components/parameters/TeacherID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EducationIn'
+      responses:
+        '200':
+          description: Education row created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEducation'
+        '400':
+          $ref: '#/components/responses/Error'
+  /teachers/{id}/educations/{eduId}:
+    put:
+      operationId: updateTeacherEducation
+      summary: Edit teacher education
+      description: |
+        Edit one education-history row. Takes no `updated_at`. Added by hand: the
+        framework generator drops this operation because DELETE on the same path
+        is registered after it and resets the path's method map.
+      tags:
+        - Teacher
+      parameters:
+        - $ref: '#/components/parameters/TeacherID'
+        - $ref: '#/components/parameters/EducationID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EducationIn'
+      responses:
+        '200':
+          description: Education row updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEducation'
+        '400':
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteTeacherEducation
+      summary: Remove teacher education
+      description: Delete one education-history row. Takes no request body.
+      tags:
+        - Teacher
+      parameters:
+        - $ref: '#/components/parameters/TeacherID'
+        - $ref: '#/components/parameters/EducationID'
+      responses:
+        '200':
+          description: Education row deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEducation'
+        '400':
+          $ref: '#/components/responses/Error'
+components:
+  parameters:
+    TeacherID:
+      in: path
+      name: id
+      required: true
+      description: Teacher `uuid_key`.
+      schema:
+        type: string
+        format: uuid
+    EducationID:
+      in: path
+      name: eduId
+      required: true
+      description: Education `uuid_key`.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Header:
+      type: object
+      properties:
+        request_id:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+    Teacher:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teacher_code:
+          type: string
+          description: Server-generated, format `TCH-<hire-year>-<seq>`.
+          example: TCH-2024-001
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        hire_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [ACTIVE, ON_LEAVE, INACTIVE]
+        created_at:
+          type: string
+          description: RFC3339 with microseconds.
+          example: '2026-09-29T15:31:58.949356Z'
+        updated_at:
+          type: string
+          description: RFC3339 with microseconds.
+          example: '2026-09-29T15:31:58.949356Z'
+    TeacherDetail:
+      allOf:
+        - $ref: '#/components/schemas/Teacher'
+        - type: object
+          properties:
+            educations:
+              type: array
+              items:
+                $ref: '#/components/schemas/Education'
+    Education:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teacher_id:
+          type: string
+          format: uuid
+        institution_level:
+          type: string
+        institution:
+          type: string
+        study_start_date:
+          type: string
+          format: date
+        study_end_date:
+          type: string
+          format: date
+        score:
+          type: string
+          description: Carried as text end to end; renders the digits Postgres holds.
+          example: '3.75'
+        focused_subject:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+    EducationIn:
+      type: object
+      required:
+        - institution_level
+        - institution
+        - focused_subject
+        - study_start_date
+        - study_end_date
+        - score
+      properties:
+        institution_level:
+          type: string
+          maxLength: 50
+          description: Level code, resolved to the seeded `institution_levels` table.
+          enum: [PRESCHOOL, PRIMARY_SCHOOL, MIDDLE_SCHOOL, HIGH_SCHOOL, BACHELOR, MASTER, DOCTOR]
+        institution:
+          type: string
+          maxLength: 100
+        focused_subject:
+          type: string
+          maxLength: 100
+        study_start_date:
+          type: string
+          format: date
+        study_end_date:
+          type: string
+          format: date
+        score:
+          type: number
+          description: JSON number on input; rendered as a string on output. Regex `^(100(\.0{1,2})?|\d{1,2}(\.\d{1,2})?)$`.
+          example: 3.75
+    TeacherInsertIn:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - email
+        - phone
+        - hire_date
+      properties:
+        first_name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        last_name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 50
+          description: Lowercased server-side before storage.
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          pattern: '^[+][0-9]+[-][1-9][0-9]{8,12}$'
+        hire_date:
+          type: string
+          format: date
+        educations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationIn'
+    TeacherUpdateIn:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - email
+        - status
+        - updated_at
+      properties:
+        first_name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        last_name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        email:
+          type: string
+          maxLength: 50
+          description: Lowercased server-side.
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          pattern: '^[+][0-9]+[-][1-9][0-9]{8,12}$'
+        status:
+          type: string
+          enum: [ACTIVE, ON_LEAVE]
+        updated_at:
+          type: string
+          description: Optimistic-lock token, layout `2006-01-02T15:04:05.000000Z` (microseconds).
+          example: '2026-09-29T15:31:58.949356Z'
+    DeactivateIn:
+      type: object
+      required:
+        - updated_at
+      properties:
+        updated_at:
+          type: string
+          description: Optimistic-lock token, layout `2006-01-02T15:04:05.000000Z` (microseconds).
+          example: '2026-09-29T15:31:58.949356Z'
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+        header:
+          $ref: '#/components/schemas/Header'
+    SuccessTeacher:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            payload:
+              $ref: '#/components/schemas/Teacher'
+    SuccessTeacherList:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            payload:
+              type: array
+              items:
+                $ref: '#/components/schemas/Teacher'
+    SuccessTeacherDetail:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            payload:
+              $ref: '#/components/schemas/TeacherDetail'
+    SuccessEducation:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            payload:
+              $ref: '#/components/schemas/Education'
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        header:
+          $ref: '#/components/schemas/Header'
+        payload:
+          type: object
+          properties:
+            status:
+              type: integer
+            code:
+              type: string
+              description: |
+                One of the feature's business codes:
+                `E-4-TCH-SRV-001` duplicate email,
+                `E-4-TCH-SRV-002` immutable field,
+                `E-4-TCH-SRV-003` inactive is terminal,
+                `E-4-TCH-SRV-004` date in future,
+                `E-4-TCH-SRV-005` invalid date range,
+                `E-4-CMD-DTO-002` malformed field,
+                `E-4-CMD-DTO-003` format/range,
+                `E-4-CMD-DTO-004` unknown data,
+                `E-4-CMD-DTO-007` stale write / optimistic lock.
+              example: E-4-CMD-DTO-004
+            message:
+              type: string

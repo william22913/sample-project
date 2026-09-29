@@ -1,0 +1,12 @@
+# Everything the build stage needs is .go files, go.mod/go.sum and vendor/, and
+# the runtime stage additionally copies i18n/. Nothing else belongs in the
+# context - and with a 36 MB vendor/ tree, the difference is worth having.
+.git
+.github
+docs
+unit_test
+docker
+docker-compose.yml
+sql_migrations
+*.md
+.gitignore
