@@ -21,6 +21,10 @@
       "value": ""
     },
     {
+      "key": "teacherCode",
+      "value": ""
+    },
+    {
       "key": "teacherUpdatedAt",
       "value": ""
     },
@@ -66,6 +70,7 @@
               "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
               "pm.test('email is lowercased server-side', () => pm.expect(j.payload.email).to.eql(pm.collectionVariables.get('uniqueEmail')));",
               "pm.collectionVariables.set('teacherId', j.payload.id);",
+              "pm.collectionVariables.set('teacherCode', j.payload.teacher_code);",
               "pm.test('teacherId captured', () => pm.expect(j.payload.id).to.be.a('string'));"
             ]
           }
@@ -107,7 +112,7 @@
               "const j = pm.response.json();",
               "pm.test('payload is an array', () => pm.expect(j.payload).to.be.an('array'));",
               "const tid = pm.collectionVariables.get('teacherId');",
-              "pm.test('list contains the created teacher', () => pm.expect(j.payload.map(t => t.id)).to.include(tid));"
+              "pm.test('list returns the created teacher', () => pm.expect(j.payload.map(t => t.id)).to.eql([tid]));"
             ]
           }
         }
@@ -116,7 +121,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/teachers?page=1&limit=20",
+          "raw": "{{baseUrl}}/teachers?page=1&limit=20&filter=teacher_code%20eq%20{{teacherCode}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -131,10 +136,14 @@
             {
               "key": "limit",
               "value": "20"
+            },
+            {
+              "key": "filter",
+              "value": "teacher_code eq {{teacherCode}}"
             }
           ]
         },
-        "description": "Paginated list. Only `page` is required."
+        "description": "The list endpoint, filtered to the teacher the previous request just created. The filter is load-bearing, not decoration: unfiltered this was page 1 of an id-ascending list, and the created teacher has the highest id in the table - so the membership assertion failed as soon as the table passed 20 rows, which is to say on the second run against any database this collection had already written to. teacher_code is the one column here that is both unique per row and searchable (email is not a valid search key), so the filter narrows the page to exactly the created row however much other data exists."
       }
     },
     {
