@@ -1,7 +1,7 @@
 ---
 feature_code: FEAT-001
 service: sample-project
-version: 4
+version: 5
 status: complete
 spec_version: 10
 sources:
@@ -9,8 +9,8 @@ sources:
     source_version: "1.0"
     note: The SRD for the Teacher Management Module (Teacher CRUD). Source of the CRUD flows and the hard-delete prohibition. Superseded by spec.md in several places — the status enum, Primary_Subject, class reassignment, and all Subject/Class/Student links.
   - path: knowledge/nexcommon-reuse-survey.md
-    source_version: "1.1"
-    note: Survey of the shared nexcommon library. Source of every reuse decision below — audit_helper (§1), the no-op WhitelistValidator (§2), the regex constants (§3), the HTTP/DTO scaffolding (§4), and the house migration style (§5).
+    source_version: "1.3"
+    note: Survey of the shared nexcommon library. Source of every reuse decision below — audit_helper (§1), the no-op WhitelistValidator (§2), the regex constants (§3), the HTTP/DTO scaffolding (§4), the house migration style (§5), the optimistic-lock error ErrDataLocked (§7), and the i18n bundle loader (§8).
 non_functional_concerns:
   - audit_durability
   - search_index_ceiling
@@ -61,7 +61,8 @@ this session.)
 | :--- | :--- |
 | `teachers` table + migration | The teacher record. `database.md`. |
 | `teacher_education_histories` table | Owned education rows. `database.md`. |
-| `institution_levels` table + seed | Lookup for the per-row institution level. `database.md`. |
+| `institution_levels` table + seed | Lookup for the per-row institution level. Seven seeded codes. `database.md`. |
+| `i18n/institution_level/{en-US,id-ID}.json` | English and Indonesian labels for those seven codes. Content, not schema — see A6. |
 | Teacher DAO / service / DTOs / endpoints | Create, list, detail, update, deactivate. |
 | Education DAO / service / DTOs / endpoints | Add, edit, delete a row. |
 | Audit wiring | Instantiating `audit_helper` and registering `teachers`. |
@@ -76,6 +77,8 @@ this session.)
 | Phone + email patterns | `regex.PHONE_NUMBER_WITH_COUNTRY_CODE`, `regex.EMAIL_REGEX` | Survey §3 |
 | List filtering, search, ordering, pagination | `dto/in.GetListRequest` + the get-list validator and DAO | Survey §4 |
 | Request context | `context.ContextModel` | Survey §4 |
+| Stale-write rejection | `error.ErrDataLocked` (`E-4-CMD-DTO-007`) | Survey §7 |
+| English / Indonesian label dictionaries | `bundles.NewBundles` + `ReadMessageBundle`, over `nicksnyder/go-i18n/v2` | Survey §8 |
 
 **Untouched:** everything Subject / Class / Student, student enrollment, the
 grading module, payroll, and any authentication or role model.
@@ -149,9 +152,13 @@ proposed.
   links to no other data except its own education history" also stays literally
   true: this FK hangs off `teacher_education_histories`, not `teachers`. So no
   `architect_feedback` was filed.
-- **Consequence.** Seeded rows are content the user owns; a provisional list is
-  in `database.md`. Making levels admin-editable would be a **separate feature**
-  with its own endpoints — explicitly out of scope here.
+- **Consequence.** The table stores a stable **code**, not a display string: the
+  seeded set is fixed at seven values (`PRESCHOOL`, `PRIMARY_SCHOOL`,
+  `MIDDLE_SCHOOL`, `HIGH_SCHOOL`, `BACHELOR`, `MASTER`, `DOCTOR`) and is no
+  longer provisional — the user fixed the list this session. The labels a human
+  reads are **not** in the database; they are i18n bundle content (A6). Making
+  levels admin-editable would be a **separate feature** with its own endpoints —
+  explicitly out of scope here.
 
 ### A5 — Concurrency: optimistic lock via `updated_at`, not a `version` column
 
@@ -175,6 +182,49 @@ proposed.
   redundant once `updated_at` already carries monotonic change. (d) conditional
   write on field values is the implicit form of (c) and adds nothing.
 
+### A6 — Institution-level labels: reuse the i18n bundles, do not build a translations table
+
+- **Options.** (a) A `institution_level_translations` child table
+  (`institution_level_id`, `locale`, `label`); (b) two label columns on the
+  lookup itself (`label_en`, `label_id`); (c) reuse nexcommon's i18n bundle
+  loader over JSON dictionaries.
+- **Chosen: (c).** The user's requirement is that each seeded level carries an
+  English and an Indonesian label. The library already has a translation store
+  and it is **file-based, not row-based**: `bundles.NewBundles(rootDir,
+  defaultLanguage)` walks `i18n/<bundle>/<locale>.json`, where the bundle name is
+  the sub-path joined with `.`, and `ReadMessageBundle(bundleName, messageID,
+  language, param)` resolves a key. Survey §8.
+- **Shape.** Bundle `institution_level` (directory `i18n/institution_level/`),
+  one file per locale — `en-US.json`, `id-ID.json`, matching the two locales the
+  library already ships. The seven seeded codes are the message IDs, so the
+  dictionary keys and the seeded column values are the same strings by
+  construction and cannot drift into separate vocabularies.
+- **Why not a table.** (a) would be a **second** i18n mechanism beside the one
+  the library and its error formatter already use — `error/formator.go` resolves
+  `common.constanta` and `common.error` from these same bundles. And the labels
+  are not relational data: nothing joins on them, filters by them, or enforces
+  uniqueness over them, so a table would buy a join and a migration for content
+  that is versioned better in git. (b) hard-codes the locale set into the schema,
+  so a third language becomes a migration rather than a new JSON file.
+- **Consequence, and it is the real limitation.** `ReadMessageBundle` takes a
+  `language` argument, and nexcommon sources that from the **auth token**
+  (`ctx.AuthAccessTokenModel.Locale = tokenModel.Locale`). FEAT-001 has no auth
+  (A2), so `Locale` is never populated and **there is no per-request language
+  selection in this phase** — the default language handed to `NewBundles`
+  (`id-ID`, matching the library's own `language.Indonesian` bundle default and
+  its tests) decides the response language for every caller. The spec is silent
+  on language: it mandates no locale field, header or query parameter, and pins
+  no column for one. Adding a client-selectable mechanism would be inventing API
+  surface the spec never authorised, so **no `architect_feedback` is filed** and
+  the gap is carried as an open item in `database.md` for the language-selection
+  feature to close.
+- **Failure mode, which is benign.** `ReadMessageBundle` `recover()`s to the
+  `messageID` on any panic — missing bundle, missing file, missing key — so an
+  unrecognised code degrades to returning `HIGH_SCHOOL` verbatim rather than
+  producing a 500. The API therefore stays up on a content gap. The cost is that
+  a missing translation is silent; Gate 1.13 in `database.md` checks the
+  dictionary covers every seeded code.
+
 ## HTTP surface
 
 Indicative paths; `/go-dev` follows the project's `WrapService` conventions.
@@ -185,7 +235,7 @@ Every route uses `WhitelistValidator` (A2).
 | `POST` | `/teachers` | Create (with optional embedded education rows) |
 | `GET` | `/teachers` | List — search by name / `Teacher_ID`, filter status, paginate |
 | `GET` | `/teachers/{id}` | Detail, including the education array (may be empty) |
-| `PUT` | `/teachers/{id}` | Update contact details / status / `version` |
+| `PUT` | `/teachers/{id}` | Update contact details / status / expected `updated_at` |
 | `POST` | `/teachers/{id}/deactivate` | Deactivate — status toggle only |
 | `POST` | `/teachers/{id}/educations` | Add an education row |
 | `PUT` | `/teachers/{id}/educations/{eduId}` | Edit an education row |
@@ -314,7 +364,7 @@ marked **[deferred]** are deferred by the spec itself and are carried here as
 **Concurrency**
 
 - **C35** a write based on a stale read is rejected and returns the current record — conditional `UPDATE ... WHERE id = $1 AND updated_at = $client_updated_at`; zero rows affected → `error.ErrDataLocked` (`E-4-CMD-DTO-007`) carrying the current record so the loser can re-fetch. Mechanism: A5.
-- **C36** enforced server-side; cannot be bypassed by omitting the token — the expected version is matched against the stored row, so an omitted version matches nothing rather than skipping the check.
+- **C36** enforced server-side; cannot be bypassed by omitting the token — the expected `updated_at` is matched against the stored row, so an omitted value matches nothing rather than skipping the check.
 
 ### Primary flow
 

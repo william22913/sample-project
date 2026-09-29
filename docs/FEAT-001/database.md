@@ -1,7 +1,7 @@
 ---
 feature_code: FEAT-001
 service: sample-project
-version: 4
+version: 5
 status: complete
 spec_version: 10
 sources:
@@ -9,8 +9,8 @@ sources:
     source_version: "1.0"
     note: The SRD for the Teacher Management Module. Source of the TEACHER entity attribute table (§5), the status enum values, and the hard-delete prohibition (§4.4). Superseded in several places by spec.md — see spec.md's scope-reduction table.
   - path: knowledge/nexcommon-reuse-survey.md
-    source_version: "1.1"
-    note: Survey of the shared nexcommon library. Source of the house DDL/migration style (§5), the audit_helper before-snapshot query that mandates uuid_key on audited tables and deleted on teachers (§1), and the regex constants (§3).
+    source_version: "1.3"
+    note: Survey of the shared nexcommon library. Source of the house DDL/migration style (§5), the audit_helper before-snapshot query that mandates uuid_key on audited tables and deleted on teachers (§1), the regex constants (§3), the optimistic-lock error ErrDataLocked (§7), and the i18n bundle loader used for the level labels (§8).
 pr_url: https://github.com/william22913/test-docs/pull/4
 last_updated: 2026-09-29
 ---
@@ -103,7 +103,7 @@ erDiagram
     institution_levels {
         bigint    id          PK "seq institution_levels_pkey_seq"
         uuid      uuid_key    UK "convention; nothing reads it"
-        varchar   name        UK "UNIQUE; seeded only"
+        varchar   name        UK "UNIQUE; stable code (HIGH_SCHOOL), not a label; label via i18n bundle - A6"
         timestamp created_at
         timestamp updated_at
     }
@@ -113,11 +113,11 @@ erDiagram
         uuid      uuid_key             UK "convention; nothing reads it"
         bigint    teacher_id           FK "-> teachers.id"
         bigint    institution_level_id FK "-> institution_levels.id; NOT NULL"
-        varchar   institution             "free text by spec"
-        date      study_start_date
-        date      study_end_date
+        varchar   institution             "VARCHAR(100) NOT NULL; free text by spec"
+        date      study_start_date        "NOT NULL"
+        date      study_end_date          "NOT NULL"
         numeric   score                   "NUMERIC(5,2); CHECK 0-100"
-        varchar   focused_subject         "free text by spec"
+        varchar   focused_subject         "VARCHAR(100) NOT NULL; free text by spec"
         timestamp created_at
         timestamp updated_at
     }
@@ -229,6 +229,15 @@ the table is **seeded only**, with no CRUD surface of its own.
 It hangs off `teacher_education_histories`, not off `teachers` — see the ERD
 notes above. Not audited, so its `uuid_key` is convention only.
 
+**`name` holds a stable code, not a display string.** The seeded values are
+`PRESCHOOL`, `PRIMARY_SCHOOL`, `MIDDLE_SCHOOL`, `HIGH_SCHOOL`, `BACHELOR`,
+`MASTER`, `DOCTOR` — uppercase ASCII, which is what the spec's field-constraints
+table caps at 50 ASCII for this column. The human-readable label for each code
+is **not stored in the database**; it is i18n bundle content keyed by the code
+itself (`architecture.md` A6, dictionary in the next section). Keeping the
+column a code rather than a label is what lets a third language arrive as a new
+JSON file instead of a migration.
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- PostgreSQL < 13 only; see Gate 0.1
 
@@ -244,6 +253,21 @@ CREATE TABLE IF NOT EXISTS "institution_levels" (
     CONSTRAINT uq_institutionlevels_name UNIQUE (name)
 );
 ```
+
+No `CHECK` constraint pins `name` to the seven codes. The table is seeded-only
+and has no write surface, so the constraint would guard against a write path
+that does not exist; the seed statement below is the enforcement point, and
+Gate 1.13 checks the dictionary and the seed agree. A `CHECK` becomes worthwhile
+the day this lookup gains a CRUD surface, which is a separate feature (A4).
+
+#### Why the code, not a surrogate, is the join key for translations
+
+The dictionary is keyed on the **code string**, not on `id` or `uuid_key`.
+Keying on `id` is tempting — it is already the PK — but `id` is a
+sequence-backed surrogate assigned at seed time, so the same level could get a
+different `id` in a rebuilt database while the dictionary stayed fixed, and the
+translation would silently detach. The code is the stable identifier across
+environments; that is what an i18n message ID has to be.
 
 ---
 
@@ -463,24 +487,98 @@ update carrying the existing value is a no-op rather than a regeneration.
 
 ```sql
 INSERT INTO institution_levels (name) VALUES
-    ('High School'),
-    ('Vocational High School'),
-    ('University')
+    ('PRESCHOOL'),
+    ('PRIMARY_SCHOOL'),
+    ('MIDDLE_SCHOOL'),
+    ('HIGH_SCHOOL'),
+    ('BACHELOR'),
+    ('MASTER'),
+    ('DOCTOR')
 ON CONFLICT (name) DO NOTHING;
 ```
 
-**This list is provisional content, not design.** The spec gives "high school,
-university, etc." and no authoritative enumeration exists in the SRD. The three
-rows are a starting set so the `NOT NULL` foreign key is satisfiable on day one.
-Amend before deploy — the list is data, and changing it is an ordinary
-insertion, not a schema migration.
+**This list is now authoritative, not provisional.** The user fixed the
+enumeration this session (decision D5). It supersedes the three-value starting
+set the earlier draft carried — `High School` / `Vocational High School` /
+`University` — which existed only so the `NOT NULL` foreign key was satisfiable
+on day one. Note the change in kind, not just in count: the old values mixed
+institution *types* (`University`) with school *levels*, while the new set is
+uniformly a level-of-education scale, so a teacher's rows read as one ordered
+progression (`HIGH_SCHOOL` → `BACHELOR` → `MASTER`) rather than three
+overlapping categories.
 
 Seeding happens in the same migration as the tables, not a separate one: this is
 a brand-new project's starting schema, and the whole initial schema belongs in
 one reviewed change.
 
+**Nothing may reference these rows by `id`.** `id` is sequence-assigned at insert
+time, so it depends on seed order and on whether an earlier `ON CONFLICT` skipped
+a row; application code resolves a level by `name` (the code) and lets the FK
+carry the surrogate. The dictionary below is keyed on the code for the same
+reason.
+
 No other seed data. There is no default teacher, and no bootstrap user — there
 is no user table.
+
+---
+
+## i18n dictionary for the level labels
+
+The seven codes are the message IDs; the labels are bundle content, keyed by
+locale. Two files, matching the two locales the library already ships
+(`nexcommon`'s own `i18n/common/constanta/` uses `en-US.json` and `id-ID.json`):
+
+`i18n/institution_level/en-US.json`
+
+```json
+{
+  "PRESCHOOL": "Preschool",
+  "PRIMARY_SCHOOL": "Primary School",
+  "MIDDLE_SCHOOL": "Middle School",
+  "HIGH_SCHOOL": "High School",
+  "BACHELOR": "Bachelor",
+  "MASTER": "Master",
+  "DOCTOR": "Doctor"
+}
+```
+
+`i18n/institution_level/id-ID.json`
+
+```json
+{
+  "PRESCHOOL": "Pra-Sekolah",
+  "PRIMARY_SCHOOL": "Sekolah Dasar",
+  "MIDDLE_SCHOOL": "Sekolah Menengah Pertama",
+  "HIGH_SCHOOL": "Sekolah Menengah Atas",
+  "BACHELOR": "Sarjana",
+  "MASTER": "Magister",
+  "DOCTOR": "Doktor"
+}
+```
+
+The Indonesian labels use the full institutional names rather than the acronyms
+(`Sekolah Menengah Atas`, not `SMA`) because the acronyms are colloquialisms a
+non-Indonesian reader of the API would not recognise; a client that wants the
+short form can map it itself.
+
+**Bundle name and lookup.** `NewBundles("<i18n root>", "id-ID")` walks the root
+and names each bundle from its sub-path, so the directory `i18n/institution_level/`
+becomes bundle `institution_level`. A label is then:
+
+```go
+bundles.ReadMessageBundle("institution_level", "HIGH_SCHOOL", language, nil)
+```
+
+`language` empty falls back to the `defaultLanguage` passed to `NewBundles`
+(`id-ID`, matching the library's own `language.Indonesian` bundle default and
+the value its tests pass). See `architecture.md` A6 for why `language` is empty
+for every request in this phase, and the migration plan's Gate 1.13 for the
+seed/dictionary agreement check.
+
+**The dictionary is not a table, and gets no migration.** It is content that
+lives in git, so adding a language is a new file and translating a level is a
+one-line diff — neither of which should wait on a schema change. It ships with
+the service binary rather than being read from the database.
 
 ---
 
@@ -600,7 +698,7 @@ histories. Same order, no dependency crossed.
 
 1. `CREATE EXTENSION IF NOT EXISTS pgcrypto;` — PostgreSQL < 13 only.
 2. `CREATE SEQUENCE institution_levels_pkey_seq` + `CREATE TABLE institution_levels`.
-3. Seed `institution_levels`. Any time after step 2.
+3. Seed `institution_levels` — the seven codes, `ON CONFLICT (name) DO NOTHING`. Any time after step 2.
 4. `CREATE SEQUENCE teachers_pkey_seq` + `CREATE TABLE teachers` + `uq_teachers_email_lower` + `idx_teachers_status` + the column comment.
 5. `set_teacher_code()` function + `trg_teachers_setcode` trigger.
 6. `CREATE SEQUENCE teacher_education_histories_pkey_seq` + `CREATE TABLE teacher_education_histories` (both FKs now resolve) + its two indexes.
@@ -668,8 +766,9 @@ migration file.
 | 1.8 | Insert with `study_end_date < study_start_date` | rejected `23514` |
 | 1.9 | Insert a teacher + education rows, delete one row | teacher and sibling rows untouched (criterion 27) |
 | 1.10 | Insert a teacher omitting `status` | defaults to `ACTIVE` |
-| 1.11 | Re-run the seed statement alone | idempotent, no duplicate levels |
+| 1.11 | Re-run the seed statement alone | idempotent — still exactly seven rows, no duplicates |
 | 1.12 | Rollback rehearsal on a scratch DB | clean, or documented as intentionally absent |
+| 1.13 | Diff the seeded `name` values against the keys of `i18n/institution_level/en-US.json` and `id-ID.json` | **both directions match** — every seeded code has a label in both files, and no file carries a key with no seeded row. A missing key does not fail loudly at runtime: `ReadMessageBundle` recovers to the message ID and returns the raw code, so this check is the only place the gap surfaces |
 
 **No DDL or migration file is written by this session.** The plan above is the
 handoff to whoever implements the feature (`/go-dev`), which executes one
@@ -709,7 +808,17 @@ only in application code are listed too — that is where the risk is.
    Blocking for criterion 16.
 2. **Postgres version** — drives Gate 0.1 (`pgcrypto` vs built-in
    `gen_random_uuid()`).
-3. **Seed list contents** — provisional, owned by the user.
+3. **Language selection for the level labels.** The list contents are settled
+   (seven codes, decision D5) and both dictionaries are written, but **nothing
+   in this phase lets a caller choose English or Indonesian.** nexcommon sources
+   the language from the auth token's `Locale`, and this feature has no auth
+   (A2), so every response resolves against the `NewBundles` default (`id-ID`).
+   The spec mandates no locale field, header or query parameter, so `/architect`
+   will not invent one — the selection mechanism is a spec-level decision and
+   belongs to the language-selection feature. Raised here rather than as
+   `architect_feedback`, because the spec does not claim a capability this
+   design fails to deliver; it simply does not address language at all. See
+   `architecture.md` A6.
 4. **Down migration policy** — Gate 0.6.
 5. **`institution_levels` editability** — seeded-only this phase; a CRUD surface
    for it would be a separate feature.

@@ -1,8 +1,16 @@
 # nexcommon reuse survey — FEAT-001
 
-**Version:** 1.2
+**Version:** 1.3
 **Date:** 2026-09-28, amended 2026-09-29.
 **Surveyed against:** local clone at `C:\Users\Pongo\Documents\github\nexcommon`, `main` branch.
+
+> **Changelog — 1.3.** Adds §8 — the i18n bundle loader (`bundles`). Needed
+> because the `institution_levels` labels now have to resolve to English and
+> Indonesian, and the library already has a translation store; the alternative
+> was inventing a translations table beside it. Also reorders the file: the 1.2
+> changelog inserted §7 *before* §6, so the sections read 5, 7, 6. They now run
+> 1–8 in order. No content changed in that move — cross-references by number
+> were already correct and stay correct.
 
 > **Changelog — 1.2.** Adds §7 — `error.ErrDataLocked`. This error was present in
 > the library clone all along but was missing from the survey, so the original
@@ -243,6 +251,19 @@ audited. The `uuid_key`/`deleted` requirement comes from `audit_helper`
 
 ---
 
+## 6. Things checked and deliberately *not* used
+
+| Found | Left alone because |
+| :--- | :--- |
+| `services/housekeeping_view` | No housekeeping/orphan cleanup in scope — no hard delete exists (criterion 19). |
+| `dto/in.GetMultipartDTO`, file-upload path | FEAT-001 has no file fields. |
+| `services/scheduler`, `limited_scheduler` | No scheduled work in this feature. |
+| `dao.GetListDataDAO` multi-database / sharding / Mongo | Single Postgres, single schema. The composition root should still be *checked* for a second (`PostgresqlView`) section before wiring, per `nexcommon-go-data-standards`. |
+| `error2.NewUnBundledErrorMessages` converter pattern | Now used — `ErrDataLocked` (§7) and the field-level validation errors (criteria 3, 4, 5, 28) all flow through it. Flag was resolved by the v10 design pass. |
+| `regex.NAME_STANDARD` | Too strict for the spec's name rules — see §3. |
+
+---
+
 ## 7. Optimistic-lock error — reused, not built
 
 **Location:** `error/message.go:18`, `error/type.go`
@@ -281,13 +302,74 @@ on it.
 
 ---
 
-## 6. Things checked and deliberately *not* used
+## 8. i18n bundles — reused, not built
 
-| Found | Left alone because |
-| :--- | :--- |
-| `services/housekeeping_view` | No housekeeping/orphan cleanup in scope — no hard delete exists (criterion 19). |
-| `dto/in.GetMultipartDTO`, file-upload path | FEAT-001 has no file fields. |
-| `services/scheduler`, `limited_scheduler` | No scheduled work in this feature. |
-| `dao.GetListDataDAO` multi-database / sharding / Mongo | Single Postgres, single schema. The composition root should still be *checked* for a second (`PostgresqlView`) section before wiring, per `nexcommon-go-data-standards`. |
-| `error2.NewUnBundledErrorMessages` converter pattern | Now used — `ErrDataLocked` (§7) and the field-level validation errors (criteria 3, 4, 5, 28) all flow through it. Flag was resolved by the v10 design pass. |
-| `regex.NAME_STANDARD` | Too strict for the spec's name rules — see §3. |
+**Location:** `bundles/bundles.go`, `bundles/type.go`; dictionaries under
+`i18n/common/{constanta,error}/{en-US,id-ID}.json`
+
+```go
+func NewBundles(rootDir string, defaultLanguage string) (Bundles, error)
+
+func (b bundles) ReadMessageBundle(
+    bundleName string,
+    messageID  string,
+    language   string,
+    param      map[string]interface{},
+) (output string)
+```
+
+FEAT-001 needs each seeded institution level to carry an English and an
+Indonesian label. The obvious build is a `institution_level_translations` table;
+it is not needed. The library already has a translation store, and it is
+**file-based, not row-based**.
+
+What the loader actually does, read from `bundles.go`:
+
+- `loadBundleI18N` walks `./<rootDir>/` and treats **every directory under it as
+  one bundle**, named by its path segments joined with `.`. So
+  `i18n/common/constanta/` is bundle `common.constanta`, and a directory
+  `i18n/institution_level/` is bundle `institution_level`. A directory holding no
+  files is skipped. The nesting is what produces the dot — there is no registry
+  and no config listing bundles, so adding one is creating a directory.
+- Each bundle is an `i18n.NewBundle(language.Indonesian)` with
+  `json.Unmarshal` registered, and every `.json` file in the directory is loaded
+  into it. **The bundle's base language is hard-coded to Indonesian** in the
+  library — `defaultLanguage` does not set it, and only decides what
+  `ReadMessageBundle` falls back to when its `language` argument is empty.
+- The JSON files are **flat `KEY: "Label"` maps**, one file per locale, with the
+  locale in the filename (`en-US.json`, `id-ID.json`). The **message IDs are the
+  keys** — which is what lets a lookup table's stored code double as the message
+  ID, so the two vocabularies cannot drift apart.
+- `ReadMessageBundle` **`recover()`s on panic and returns the `messageID`**. A
+  missing bundle, missing file, or missing key therefore degrades to the raw key
+  rather than erroring — there is no error return to check, and the failure is
+  silent by construction. That is benign for a label (the response falls back to
+  `HIGH_SCHOOL`) but means a content gap will not surface on its own; hence the
+  seed/dictionary agreement gate in `database.md`.
+- A `param` map is passed through as `TemplateData` for messages with
+  placeholders. FEAT-001's level labels have none.
+
+**Who consumes it today:** only the error layer. `error/formator.go:116` and
+`error/type.go:73` resolve `common.constanta` to turn a field name into a human
+label, and `common.error` to turn an error code into a message. So in the library
+as it stands, the bundles are the *error- and field-label* translation store.
+
+**Where the language comes from — and why it matters here.** `ReadMessageBundle`
+takes `language` as an argument, and the only thing in the library that populates
+it does so from the **auth token**: `controller/user_access.go:160` sets
+`_ctx.AuthAccessTokenModel.Locale = tokenModel.Locale` (and
+`internal_access.go:87` likewise). There is no `Accept-Language` / `X-Locale`
+header parsing anywhere in the library, and no locale on `ContextModel` outside
+the auth model. FEAT-001 uses `WhitelistValidator` (§2), so no token is parsed,
+`Locale` stays empty, and every request resolves against the `NewBundles`
+default. That is recorded as an open item in `database.md` — the selection
+mechanism is a spec-level decision, not one `/architect` should invent.
+
+**Test-usage signal for the intended defaults:** every call site in the library's
+own tests is `bundles.NewBundles("../../i18n", "id-ID")` — `id-ID` is both the
+repo's bundle base language and the tests' default, which is why the FEAT-001
+design uses the same default.
+
+**Where it is used:** `architecture.md` A6, and `database.md`'s level-label
+dictionary section.
+
