@@ -1,0 +1,12 @@
+{
+  "name": "SDMS Teacher Management - Local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

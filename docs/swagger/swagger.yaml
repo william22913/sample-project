@@ -267,6 +267,14 @@ components:
       schema:
         type: string
         format: uuid
+        # Examples throughout this file are FIXED values, deliberately. The
+        # Postman collection is generated from this spec, and any schema without
+        # an example makes the converter invent one at random - so every
+        # regeneration produced different uuids, dates, phone numbers and enum
+        # picks, and the resulting diff buried real contract changes in noise.
+        # A fixed example is what makes the generated collection a stable build
+        # artifact. Change one of these only to make the docs clearer.
+        example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
     EducationID:
       in: path
       name: eduId
@@ -275,6 +283,9 @@ components:
       schema:
         type: string
         format: uuid
+        # Deliberately a different uuid from TeacherID: the two segments address
+        # different rows, and the same value in both reads as a copy-paste slip.
+        example: 16fd2706-8baf-433b-82eb-8c7fada847da
   responses:
     Error:
       description: Error response.
@@ -288,35 +299,45 @@ components:
       properties:
         request_id:
           type: string
+          example: 3f2504e0-4f89-41d3-9a0c-0305e82c3301
         version:
           type: string
+          example: v1
         timestamp:
           type: string
+          example: '2026-09-29T15:31:58.949356Z'
     Teacher:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
         teacher_code:
           type: string
           description: Server-generated, format `TCH-<hire-year>-<seq>`.
           example: TCH-2024-001
         first_name:
           type: string
+          example: Budi
         last_name:
           type: string
+          example: Santoso
         email:
           type: string
+          example: budi.santoso@example.com
         phone:
           type: string
           nullable: true
+          example: +62-81234567890
         hire_date:
           type: string
           format: date
+          example: '2018-06-05'
         status:
           type: string
           enum: [ACTIVE, ON_LEAVE, INACTIVE]
+          example: ACTIVE
         created_at:
           type: string
           description: RFC3339 with microseconds.
@@ -340,29 +361,38 @@ components:
         id:
           type: string
           format: uuid
+          example: 16fd2706-8baf-433b-82eb-8c7fada847da
         teacher_id:
           type: string
           format: uuid
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
         institution_level:
           type: string
+          example: BACHELOR
         institution:
           type: string
+          example: Universitas Indonesia
         study_start_date:
           type: string
           format: date
+          example: '2010-09-01'
         study_end_date:
           type: string
           format: date
+          example: '2014-07-15'
         score:
           type: string
           description: Carried as text end to end; renders the digits Postgres holds.
           example: '3.75'
         focused_subject:
           type: string
+          example: Mathematics
         created_at:
           type: string
+          example: '2026-09-29T15:31:58.949356Z'
         updated_at:
           type: string
+          example: '2026-09-29T15:31:58.949356Z'
     EducationIn:
       type: object
       required:
@@ -378,18 +408,23 @@ components:
           maxLength: 50
           description: Level code, resolved to the seeded `institution_levels` table.
           enum: [PRESCHOOL, PRIMARY_SCHOOL, MIDDLE_SCHOOL, HIGH_SCHOOL, BACHELOR, MASTER, DOCTOR]
+          example: BACHELOR
         institution:
           type: string
           maxLength: 100
+          example: Universitas Indonesia
         focused_subject:
           type: string
           maxLength: 100
+          example: Mathematics
         study_start_date:
           type: string
           format: date
+          example: '2010-09-01'
         study_end_date:
           type: string
           format: date
+          example: '2014-07-15'
         score:
           type: number
           description: JSON number on input; rendered as a string on output. Regex `^(100(\.0{1,2})?|\d{1,2}(\.\d{1,2})?)$`.
@@ -407,22 +442,27 @@ components:
           type: string
           minLength: 2
           maxLength: 50
+          example: Budi
         last_name:
           type: string
           minLength: 2
           maxLength: 50
+          example: Santoso
         email:
           type: string
           maxLength: 50
           description: Lowercased server-side before storage.
+          example: budi.santoso@example.com
         phone:
           type: string
           maxLength: 50
           nullable: true
           pattern: '^[+][0-9]+[-][1-9][0-9]{8,12}$'
+          example: +62-81234567890
         hire_date:
           type: string
           format: date
+          example: '2018-06-05'
         educations:
           type: array
           items:
@@ -440,22 +480,27 @@ components:
           type: string
           minLength: 2
           maxLength: 50
+          example: Budi
         last_name:
           type: string
           minLength: 2
           maxLength: 50
+          example: Santoso
         email:
           type: string
           maxLength: 50
           description: Lowercased server-side.
+          example: budi.santoso@example.com
         phone:
           type: string
           maxLength: 50
           nullable: true
           pattern: '^[+][0-9]+[-][1-9][0-9]{8,12}$'
+          example: +62-81234567890
         status:
           type: string
           enum: [ACTIVE, ON_LEAVE]
+          example: ACTIVE
         updated_at:
           type: string
           description: Optimistic-lock token, layout `2006-01-02T15:04:05.000000Z` (microseconds).
@@ -474,6 +519,11 @@ components:
       properties:
         success:
           type: boolean
+          # Without this, a converter generating examples from the schema has no
+          # value to use and fills a boolean with its default - false - so every
+          # 2xx example in the generated Postman collection reads
+          # `"success": false`. That is the opposite of what the envelope means.
+          example: true
         header:
           $ref: '#/components/schemas/Header'
     SuccessTeacher:
@@ -519,6 +569,10 @@ components:
           properties:
             status:
               type: integer
+              # Same reason as SuccessEnvelope.success: no example means the
+              # converter invents an integer, and a sample error body reading
+              # `"status": 6547` is worse than no sample at all.
+              example: 400
             code:
               type: string
               description: |
@@ -535,3 +589,7 @@ components:
               example: E-4-CMD-DTO-004
             message:
               type: string
+              # Illustrative only: the real text is looked up from the i18n
+              # bundle for the code above, in the server's configured language
+              # (process-wide, not per-request). Never assert on this value.
+              example: Data tidak ditemukan
