@@ -1,0 +1,636 @@
+{
+  "info": {
+    "name": "SDMS Teacher Management",
+    "description": "End-to-end, ordered run against the Teacher Management API. Captures state between requests (teacherId, updated_at tokens, educationId) and exercises both the happy path and the documented business error codes. Generated from docs/swagger/swagger.yaml.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('responds within 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "teacherId",
+      "value": ""
+    },
+    {
+      "key": "teacherCode",
+      "value": ""
+    },
+    {
+      "key": "teacherUpdatedAt",
+      "value": ""
+    },
+    {
+      "key": "teacherUpdatedAt2",
+      "value": ""
+    },
+    {
+      "key": "educationId",
+      "value": ""
+    },
+    {
+      "key": "uniqueEmail",
+      "value": ""
+    },
+    {
+      "key": "rawEmail",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Teacher",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const ts = Date.now();",
+              "pm.collectionVariables.set('uniqueEmail', 'newman.' + ts + '@school.edu');",
+              "pm.collectionVariables.set('rawEmail', 'Newman.' + ts + '@School.edu');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('email is lowercased server-side', () => pm.expect(j.payload.email).to.eql(pm.collectionVariables.get('uniqueEmail')));",
+              "pm.collectionVariables.set('teacherId', j.payload.id);",
+              "pm.collectionVariables.set('teacherCode', j.payload.teacher_code);",
+              "pm.test('teacherId captured', () => pm.expect(j.payload.id).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Lovelace\",\n  \"email\": \"{{rawEmail}}\",\n  \"phone\": \"+62-81234567890\",\n  \"hire_date\": \"2024-03-01\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers"
+          ]
+        },
+        "description": "Create a teacher with a unique, mixed-case email. The server lowercases the email before storage."
+      }
+    },
+    {
+      "name": "2. List Teachers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('payload is an array', () => pm.expect(j.payload).to.be.an('array'));",
+              "const tid = pm.collectionVariables.get('teacherId');",
+              "pm.test('list returns the created teacher', () => pm.expect(j.payload.map(t => t.id)).to.eql([tid]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/teachers?page=1&limit=20&filter=teacher_code%20eq%20{{teacherCode}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            },
+            {
+              "key": "filter",
+              "value": "teacher_code eq {{teacherCode}}"
+            }
+          ]
+        },
+        "description": "The list endpoint, filtered to the teacher the previous request just created. The filter is load-bearing, not decoration: unfiltered this was page 1 of an id-ascending list, and the created teacher has the highest id in the table - so the membership assertion failed as soon as the table passed 20 rows, which is to say on the second run against any database this collection had already written to. teacher_code is the one column here that is both unique per row and searchable (email is not a valid search key), so the filter narrows the page to exactly the created row however much other data exists."
+      }
+    },
+    {
+      "name": "3. Teacher Detail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('educations is an array', () => pm.expect(j.payload.educations).to.be.an('array'));",
+              "pm.collectionVariables.set('teacherUpdatedAt', j.payload.updated_at);",
+              "pm.test('teacher updated_at captured (anchored to payload.updated_at, not $..updated_at)', () => pm.expect(j.payload.updated_at).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}"
+          ]
+        },
+        "description": "Detail including educations[]. Captures the TEACHER's updated_at only."
+      }
+    },
+    {
+      "name": "4. Update Teacher",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('last_name changed', () => pm.expect(j.payload.last_name).to.eql('Byron'));",
+              "pm.collectionVariables.set('teacherUpdatedAt2', j.payload.updated_at);",
+              "pm.test('updated_at advanced', () => pm.expect(j.payload.updated_at).to.not.eql(pm.collectionVariables.get('teacherUpdatedAt')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Byron\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"phone\": \"+62-81234567890\",\n  \"status\": \"ACTIVE\",\n  \"updated_at\": \"{{teacherUpdatedAt}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}"
+          ]
+        },
+        "description": "Update using the captured updated_at. Captures the new token as teacherUpdatedAt2."
+      }
+    },
+    {
+      "name": "5. Stale Update Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is stale-write E-4-CMD-DTO-007', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-CMD-DTO-007'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Byron\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"phone\": \"+62-81234567890\",\n  \"status\": \"ACTIVE\",\n  \"updated_at\": \"{{teacherUpdatedAt}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}"
+          ]
+        },
+        "description": "Replays the now-stale token. Must be rejected by the optimistic lock."
+      }
+    },
+    {
+      "name": "6. Add Education",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('educationId', j.payload.id);",
+              "pm.test('educationId captured', () => pm.expect(j.payload.id).to.be.a('string'));",
+              "pm.test('score rendered as a string', () => pm.expect(j.payload.score).to.eql('3.75'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Univ\",\n  \"focused_subject\": \"Math\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-06-30\",\n  \"score\": 3.75\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}/educations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}",
+            "educations"
+          ]
+        },
+        "description": "Add one education row (score is a JSON number on input)."
+      }
+    },
+    {
+      "name": "7. Edit Education",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('institution updated', () => pm.expect(pm.response.json().payload.institution).to.eql('Univ2'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Univ2\",\n  \"focused_subject\": \"Math\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-06-30\",\n  \"score\": 3.9\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}/educations/{{educationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}",
+            "educations",
+            "{{educationId}}"
+          ]
+        },
+        "description": "Edit one education row. Takes NO updated_at."
+      }
+    },
+    {
+      "name": "8. Delete Education",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('deleted id matches educationId', () => pm.expect(pm.response.json().payload.id).to.eql(pm.collectionVariables.get('educationId')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}/educations/{{educationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}",
+            "educations",
+            "{{educationId}}"
+          ]
+        },
+        "description": "Delete one education row. Sends NO body."
+      }
+    },
+    {
+      "name": "9. Deactivate Teacher",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('status is INACTIVE', () => pm.expect(pm.response.json().payload.status).to.eql('INACTIVE'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"updated_at\": \"{{teacherUpdatedAt2}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}/deactivate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}",
+            "deactivate"
+          ]
+        },
+        "description": "Deactivate using the current token captured in step 4."
+      }
+    },
+    {
+      "name": "10a. Duplicate Email Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is E-4-TCH-SRV-001', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-TCH-SRV-001'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Lovelace\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"phone\": \"+62-81234567890\",\n  \"hire_date\": \"2024-03-01\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers"
+          ]
+        },
+        "description": "Re-creates with the same email. Must fail the unique-email rule."
+      }
+    },
+    {
+      "name": "10b. Invalid Order Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is E-4-CMD-DTO-002', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-CMD-DTO-002'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/teachers?page=1&order=id%20%3B--",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "order",
+              "value": "id ;--"
+            }
+          ]
+        },
+        "description": "Order direction must be ASC/DESC only; a SQL-ish token is rejected."
+      }
+    },
+    {
+      "name": "10c. Score Out Of Range Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is E-4-CMD-DTO-003', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-CMD-DTO-003'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Univ\",\n  \"focused_subject\": \"Math\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-06-30\",\n  \"score\": 101\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}/educations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}",
+            "educations"
+          ]
+        },
+        "description": "score 101 violates the range regex."
+      }
+    },
+    {
+      "name": "10d. Unknown Teacher Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is E-4-CMD-DTO-004', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-CMD-DTO-004'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/teachers/00000000-0000-0000-0000-000000000000",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "00000000-0000-0000-0000-000000000000"
+          ]
+        },
+        "description": "An id that does not exist."
+      }
+    },
+    {
+      "name": "10e. Update Without updated_at Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is E-4-CMD-DTO-002', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-CMD-DTO-002'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Byron\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"phone\": \"+62-81234567890\",\n  \"status\": \"ACTIVE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/teachers/{{teacherId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "{{teacherId}}"
+          ]
+        },
+        "description": "The optimistic-lock token cannot be omitted."
+      }
+    },
+    {
+      "name": "10f. Malformed Teacher ID Rejected",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 400', () => pm.response.to.have.status(400));",
+              "pm.test('code is E-4-CMD-DTO-002', () => pm.expect(pm.response.json().payload.code).to.eql('E-4-CMD-DTO-002'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/teachers/not-a-uuid",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "teachers",
+            "not-a-uuid"
+          ]
+        },
+        "description": "An id that is not a uuid at all. {id} addresses a uuid column, so before the service validated it Postgres answered 'invalid input syntax for type uuid' (SQLSTATE 22P02) and the caller got a 500 for a typo. Rejected now before any statement is sent, as a malformed parameter rather than as a missing row or a server fault."
+      }
+    }
+  ]
+}

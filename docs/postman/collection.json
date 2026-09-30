@@ -1,0 +1,1487 @@
+{
+  "item": [
+    {
+      "name": "Teacher",
+      "description": "Teacher records and their education history.",
+      "item": [
+        {
+          "name": "Create teacher",
+          "request": {
+            "name": "Create teacher",
+            "description": {
+              "content": "Create a teacher, with optional embedded education rows in the same\ntransaction. Added by hand: the framework generator drops this operation\nbecause GET /teachers is registered on the same path after it and resets\nthe path's method map.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"phone\": \"+62-81234567890\",\n  \"hire_date\": \"2018-06-05\",\n  \"educations\": [\n    {\n      \"institution_level\": \"BACHELOR\",\n      \"institution\": \"Universitas Indonesia\",\n      \"focused_subject\": \"Mathematics\",\n      \"study_start_date\": \"2010-09-01\",\n      \"study_end_date\": \"2014-07-15\",\n      \"score\": 3.75\n    },\n    {\n      \"institution_level\": \"BACHELOR\",\n      \"institution\": \"Universitas Indonesia\",\n      \"focused_subject\": \"Mathematics\",\n      \"study_start_date\": \"2010-09-01\",\n      \"study_end_date\": \"2014-07-15\",\n      \"score\": 3.75\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Teacher created.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"phone\": \"+62-81234567890\",\n  \"hire_date\": \"2018-06-05\",\n  \"educations\": [\n    {\n      \"institution_level\": \"BACHELOR\",\n      \"institution\": \"Universitas Indonesia\",\n      \"focused_subject\": \"Mathematics\",\n      \"study_start_date\": \"2010-09-01\",\n      \"study_end_date\": \"2014-07-15\",\n      \"score\": 3.75\n    },\n    {\n      \"institution_level\": \"BACHELOR\",\n      \"institution\": \"Universitas Indonesia\",\n      \"focused_subject\": \"Mathematics\",\n      \"study_start_date\": \"2010-09-01\",\n      \"study_end_date\": \"2014-07-15\",\n      \"score\": 3.75\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"teacher_code\": \"TCH-2024-001\",\n    \"first_name\": \"Budi\",\n    \"last_name\": \"Santoso\",\n    \"email\": \"budi.santoso@example.com\",\n    \"phone\": \"+62-81234567890\",\n    \"hire_date\": \"2018-06-05\",\n    \"status\": \"ACTIVE\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"phone\": \"+62-81234567890\",\n  \"hire_date\": \"2018-06-05\",\n  \"educations\": [\n    {\n      \"institution_level\": \"BACHELOR\",\n      \"institution\": \"Universitas Indonesia\",\n      \"focused_subject\": \"Mathematics\",\n      \"study_start_date\": \"2010-09-01\",\n      \"study_end_date\": \"2014-07-15\",\n      \"score\": 3.75\n    },\n    {\n      \"institution_level\": \"BACHELOR\",\n      \"institution\": \"Universitas Indonesia\",\n      \"focused_subject\": \"Mathematics\",\n      \"study_start_date\": \"2010-09-01\",\n      \"study_end_date\": \"2014-07-15\",\n      \"score\": 3.75\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "List teachers",
+          "request": {
+            "name": "List teachers",
+            "description": {
+              "content": "List, search, filter and paginate teachers.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Page number, min 1.",
+                    "type": "text/plain"
+                  },
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "Page size. Default 20. (This can only be one of 20,50,100)",
+                    "type": "text/plain"
+                  },
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "Filter expression. Valid keys: `first_name`, `last_name`,\n`teacher_code`, `status`. Operators: `eq` and `lk`. Examples:\n`status eq ACTIVE`, `first_name lk ADA`,\n`teacher_code eq TCH-2024-001`.\n\nQuirk (intentional, spec criterion 33): `status eq ACTIVE` is\ninternally rewritten to an `in` filter and also matches `ON_LEAVE`\nteachers. Valid `status` values are `ACTIVE`, `ON_LEAVE`,\n`INACTIVE`.\n",
+                    "type": "text/plain"
+                  },
+                  "key": "filter",
+                  "value": "status eq ACTIVE"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "Order clause. Valid columns: `id`, `first_name`, `last_name`,\n`teacher_code`, `created_at`, `updated_at`. Direction must be\nexactly `ASC` or `DESC`; anything else (e.g. `ASCENDING`, `;--`)\nis rejected with 400 `E-4-CMD-DTO-002`. Defaults to `id`.\n",
+                    "type": "text/plain"
+                  },
+                  "key": "order",
+                  "value": "first_name DESC"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "Boolean connector between filters. Default AND. (This can only be one of AND,OR)",
+                    "type": "text/plain"
+                  },
+                  "key": "connector",
+                  "value": "AND"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Array of teachers.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Page number, min 1.",
+                        "type": "text/plain"
+                      },
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Page size. Default 20. (This can only be one of 20,50,100)",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Filter expression. Valid keys: `first_name`, `last_name`,\n`teacher_code`, `status`. Operators: `eq` and `lk`. Examples:\n`status eq ACTIVE`, `first_name lk ADA`,\n`teacher_code eq TCH-2024-001`.\n\nQuirk (intentional, spec criterion 33): `status eq ACTIVE` is\ninternally rewritten to an `in` filter and also matches `ON_LEAVE`\nteachers. Valid `status` values are `ACTIVE`, `ON_LEAVE`,\n`INACTIVE`.\n",
+                        "type": "text/plain"
+                      },
+                      "key": "filter",
+                      "value": "status eq ACTIVE"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Order clause. Valid columns: `id`, `first_name`, `last_name`,\n`teacher_code`, `created_at`, `updated_at`. Direction must be\nexactly `ASC` or `DESC`; anything else (e.g. `ASCENDING`, `;--`)\nis rejected with 400 `E-4-CMD-DTO-002`. Defaults to `id`.\n",
+                        "type": "text/plain"
+                      },
+                      "key": "order",
+                      "value": "first_name DESC"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Boolean connector between filters. Default AND. (This can only be one of AND,OR)",
+                        "type": "text/plain"
+                      },
+                      "key": "connector",
+                      "value": "AND"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": [\n    {\n      \"id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n      \"teacher_code\": \"TCH-2024-001\",\n      \"first_name\": \"Budi\",\n      \"last_name\": \"Santoso\",\n      \"email\": \"budi.santoso@example.com\",\n      \"phone\": \"+62-81234567890\",\n      \"hire_date\": \"2018-06-05\",\n      \"status\": \"ACTIVE\",\n      \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n      \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n    },\n    {\n      \"id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n      \"teacher_code\": \"TCH-2024-001\",\n      \"first_name\": \"Budi\",\n      \"last_name\": \"Santoso\",\n      \"email\": \"budi.santoso@example.com\",\n      \"phone\": \"+62-81234567890\",\n      \"hire_date\": \"2018-06-05\",\n      \"status\": \"ACTIVE\",\n      \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n      \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Page number, min 1.",
+                        "type": "text/plain"
+                      },
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Page size. Default 20. (This can only be one of 20,50,100)",
+                        "type": "text/plain"
+                      },
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Filter expression. Valid keys: `first_name`, `last_name`,\n`teacher_code`, `status`. Operators: `eq` and `lk`. Examples:\n`status eq ACTIVE`, `first_name lk ADA`,\n`teacher_code eq TCH-2024-001`.\n\nQuirk (intentional, spec criterion 33): `status eq ACTIVE` is\ninternally rewritten to an `in` filter and also matches `ON_LEAVE`\nteachers. Valid `status` values are `ACTIVE`, `ON_LEAVE`,\n`INACTIVE`.\n",
+                        "type": "text/plain"
+                      },
+                      "key": "filter",
+                      "value": "status eq ACTIVE"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Order clause. Valid columns: `id`, `first_name`, `last_name`,\n`teacher_code`, `created_at`, `updated_at`. Direction must be\nexactly `ASC` or `DESC`; anything else (e.g. `ASCENDING`, `;--`)\nis rejected with 400 `E-4-CMD-DTO-002`. Defaults to `id`.\n",
+                        "type": "text/plain"
+                      },
+                      "key": "order",
+                      "value": "first_name DESC"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Boolean connector between filters. Default AND. (This can only be one of AND,OR)",
+                        "type": "text/plain"
+                      },
+                      "key": "connector",
+                      "value": "AND"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Teacher detail",
+          "request": {
+            "name": "Teacher detail",
+            "description": {
+              "content": "Teacher detail including `educations[]` (an empty array when there is no\nhistory). Added by hand: the framework generator drops this operation\nbecause PUT /teachers/{id} is registered on the same path after it and\nresets the path's method map.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Teacher `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Teacher detail.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"teacher_code\": \"TCH-2024-001\",\n    \"first_name\": \"Budi\",\n    \"last_name\": \"Santoso\",\n    \"email\": \"budi.santoso@example.com\",\n    \"phone\": \"+62-81234567890\",\n    \"hire_date\": \"2018-06-05\",\n    \"status\": \"ACTIVE\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"educations\": [\n      {\n        \"id\": \"16fd2706-8baf-433b-82eb-8c7fada847da\",\n        \"teacher_id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n        \"institution_level\": \"BACHELOR\",\n        \"institution\": \"Universitas Indonesia\",\n        \"study_start_date\": \"2010-09-01\",\n        \"study_end_date\": \"2014-07-15\",\n        \"score\": \"3.75\",\n        \"focused_subject\": \"Mathematics\",\n        \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n        \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n      },\n      {\n        \"id\": \"16fd2706-8baf-433b-82eb-8c7fada847da\",\n        \"teacher_id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n        \"institution_level\": \"BACHELOR\",\n        \"institution\": \"Universitas Indonesia\",\n        \"study_start_date\": \"2010-09-01\",\n        \"study_end_date\": \"2014-07-15\",\n        \"score\": \"3.75\",\n        \"focused_subject\": \"Mathematics\",\n        \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n        \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n      }\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Update teacher",
+          "request": {
+            "name": "Update teacher",
+            "description": {
+              "content": "Update a teacher. Guarded by the `updated_at` optimistic lock; a stale value is rejected with `E-4-CMD-DTO-007`.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Teacher `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"status\": \"ACTIVE\",\n  \"updated_at\": \"2026-09-29T15:31:58.949356Z\",\n  \"phone\": \"+62-81234567890\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Teacher updated.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"status\": \"ACTIVE\",\n  \"updated_at\": \"2026-09-29T15:31:58.949356Z\",\n  \"phone\": \"+62-81234567890\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"teacher_code\": \"TCH-2024-001\",\n    \"first_name\": \"Budi\",\n    \"last_name\": \"Santoso\",\n    \"email\": \"budi.santoso@example.com\",\n    \"phone\": \"+62-81234567890\",\n    \"hire_date\": \"2018-06-05\",\n    \"status\": \"ACTIVE\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"email\": \"budi.santoso@example.com\",\n  \"status\": \"ACTIVE\",\n  \"updated_at\": \"2026-09-29T15:31:58.949356Z\",\n  \"phone\": \"+62-81234567890\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Deactivate teacher",
+          "request": {
+            "name": "Deactivate teacher",
+            "description": {
+              "content": "Set the teacher's status to INACTIVE. Guarded by the `updated_at` optimistic lock.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers",
+                ":id",
+                "deactivate"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Teacher `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Teacher deactivated.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "deactivate"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"teacher_code\": \"TCH-2024-001\",\n    \"first_name\": \"Budi\",\n    \"last_name\": \"Santoso\",\n    \"email\": \"budi.santoso@example.com\",\n    \"phone\": \"+62-81234567890\",\n    \"hire_date\": \"2018-06-05\",\n    \"status\": \"ACTIVE\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "deactivate"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Add teacher education",
+          "request": {
+            "name": "Add teacher education",
+            "description": {
+              "content": "Add one education-history row to a teacher.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers",
+                ":id",
+                "educations"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Teacher `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Universitas Indonesia\",\n  \"focused_subject\": \"Mathematics\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-07-15\",\n  \"score\": 3.75\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Education row created.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "educations"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Universitas Indonesia\",\n  \"focused_subject\": \"Mathematics\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-07-15\",\n  \"score\": 3.75\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"16fd2706-8baf-433b-82eb-8c7fada847da\",\n    \"teacher_id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"institution_level\": \"BACHELOR\",\n    \"institution\": \"Universitas Indonesia\",\n    \"study_start_date\": \"2010-09-01\",\n    \"study_end_date\": \"2014-07-15\",\n    \"score\": \"3.75\",\n    \"focused_subject\": \"Mathematics\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "educations"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Universitas Indonesia\",\n  \"focused_subject\": \"Mathematics\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-07-15\",\n  \"score\": 3.75\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Edit teacher education",
+          "request": {
+            "name": "Edit teacher education",
+            "description": {
+              "content": "Edit one education-history row. Takes no `updated_at`. Added by hand: the\nframework generator drops this operation because DELETE on the same path\nis registered after it and resets the path's method map.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers",
+                ":id",
+                "educations",
+                ":eduId"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Teacher `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                },
+                {
+                  "type": "any",
+                  "value": "16fd2706-8baf-433b-82eb-8c7fada847da",
+                  "key": "eduId",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Education `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Universitas Indonesia\",\n  \"focused_subject\": \"Mathematics\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-07-15\",\n  \"score\": 3.75\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Education row updated.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "educations",
+                    ":eduId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Education `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "16fd2706-8baf-433b-82eb-8c7fada847da",
+                      "key": "eduId"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Universitas Indonesia\",\n  \"focused_subject\": \"Mathematics\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-07-15\",\n  \"score\": 3.75\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"16fd2706-8baf-433b-82eb-8c7fada847da\",\n    \"teacher_id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"institution_level\": \"BACHELOR\",\n    \"institution\": \"Universitas Indonesia\",\n    \"study_start_date\": \"2010-09-01\",\n    \"study_end_date\": \"2014-07-15\",\n    \"score\": \"3.75\",\n    \"focused_subject\": \"Mathematics\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "educations",
+                    ":eduId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Education `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "16fd2706-8baf-433b-82eb-8c7fada847da",
+                      "key": "eduId"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"institution_level\": \"BACHELOR\",\n  \"institution\": \"Universitas Indonesia\",\n  \"focused_subject\": \"Mathematics\",\n  \"study_start_date\": \"2010-09-01\",\n  \"study_end_date\": \"2014-07-15\",\n  \"score\": 3.75\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Remove teacher education",
+          "request": {
+            "name": "Remove teacher education",
+            "description": {
+              "content": "Delete one education-history row. Takes no request body.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "teachers",
+                ":id",
+                "educations",
+                ":eduId"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                  "key": "id",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Teacher `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                },
+                {
+                  "type": "any",
+                  "value": "16fd2706-8baf-433b-82eb-8c7fada847da",
+                  "key": "eduId",
+                  "disabled": false,
+                  "description": {
+                    "content": "(Required) Education `uuid_key`.",
+                    "type": "text/plain"
+                  }
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "body": {},
+            "auth": null
+          },
+          "response": [
+            {
+              "name": "Education row deleted.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "educations",
+                    ":eduId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Education `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "16fd2706-8baf-433b-82eb-8c7fada847da",
+                      "key": "eduId"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"id\": \"16fd2706-8baf-433b-82eb-8c7fada847da\",\n    \"teacher_id\": \"7c9e6679-7425-40de-944b-e07fc1f90ae7\",\n    \"institution_level\": \"BACHELOR\",\n    \"institution\": \"Universitas Indonesia\",\n    \"study_start_date\": \"2010-09-01\",\n    \"study_end_date\": \"2014-07-15\",\n    \"score\": \"3.75\",\n    \"focused_subject\": \"Mathematics\",\n    \"created_at\": \"2026-09-29T15:31:58.949356Z\",\n    \"updated_at\": \"2026-09-29T15:31:58.949356Z\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "name": "Error response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "teachers",
+                    ":id",
+                    "educations",
+                    ":eduId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Teacher `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+                      "key": "id"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "(Required) Education `uuid_key`.",
+                        "type": "text/plain"
+                      },
+                      "type": "any",
+                      "value": "16fd2706-8baf-433b-82eb-8c7fada847da",
+                      "key": "eduId"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"header\": {\n    \"request_id\": \"3f2504e0-4f89-41d3-9a0c-0305e82c3301\",\n    \"version\": \"v1\",\n    \"timestamp\": \"2026-09-29T15:31:58.949356Z\"\n  },\n  \"payload\": {\n    \"status\": 400,\n    \"code\": \"E-4-CMD-DTO-004\",\n    \"message\": \"Data tidak ditemukan\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('response is not a server error', () => pm.expect(pm.response.code).to.be.below(400));",
+          "pm.test('response time is under 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    }
+  ],
+  "info": {
+    "name": "SDMS Teacher Management Documentation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Teacher record management (create, read, update, deactivate) plus owned\neducation-history rows.\n\nThis spec is the complete contract for the feature's 8 routes. It started\nfrom the framework-generated document at `GET /swagger/swagger.yaml`, which\nis incomplete: nexcommon's controller resets a path's method map on every\nregistration (`controller/http/param.go`), so a path carrying two methods\nloses the earlier one. Three operations here (POST /teachers,\nGET /teachers/{id}, PUT /teachers/{id}/educations/{eduId}) were therefore\nauthored by hand from the route table and DTOs; each carries a `description`\nnote saying so.\n\nAll routes are registered with nexcommon's `WhitelistValidator`, so no\ntoken is required and no `securitySchemes` entry applies to them.\n",
+      "type": "text/plain"
+    }
+  }
+}

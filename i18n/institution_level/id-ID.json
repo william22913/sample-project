@@ -1,0 +1,9 @@
+{
+  "PRESCHOOL": "Pra-Sekolah",
+  "PRIMARY_SCHOOL": "Sekolah Dasar",
+  "MIDDLE_SCHOOL": "Sekolah Menengah Pertama",
+  "HIGH_SCHOOL": "Sekolah Menengah Atas",
+  "BACHELOR": "Sarjana",
+  "MASTER": "Magister",
+  "DOCTOR": "Doktor"
+}
