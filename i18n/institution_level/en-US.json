@@ -1,0 +1,9 @@
+{
+  "PRESCHOOL": "Preschool",
+  "PRIMARY_SCHOOL": "Primary School",
+  "MIDDLE_SCHOOL": "Middle School",
+  "HIGH_SCHOOL": "High School",
+  "BACHELOR": "Bachelor",
+  "MASTER": "Master",
+  "DOCTOR": "Doctor"
+}

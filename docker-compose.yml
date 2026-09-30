@@ -1,0 +1,105 @@
+# FEAT-001 local stack: Postgres, JetStream-enabled NATS, and the service.
+#
+# Every credential below is a local-development placeholder, overridable from
+# the environment (COMPOSE_POSTGRES_PASSWORD=... docker compose up). Nothing
+# here is a deployment secret, and no value is logged by the service - see
+# nexcommon-go-config-standards on why a populated config is never printed.
+#
+# `docker compose up --wait` is the intended invocation: the service is gated on
+# real Postgres readiness, not on the container having started, because the
+# schema is applied by an initdb script rather than by the application.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${COMPOSE_POSTGRES_USER:-sampleproject}
+      POSTGRES_PASSWORD: ${COMPOSE_POSTGRES_PASSWORD:-sampleproject}
+      POSTGRES_DB: ${COMPOSE_POSTGRES_DB:-sampleproject}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # The schema, applied once on a fresh volume. postgres-init.sh, not the
+      # .sql file directly: the migration file carries a live Down half that
+      # would undo the schema in the same breath (see that script).
+      - ./docker/postgres-init.sh:/docker-entrypoint-initdb.d/01_init_schema.sh:ro
+      - ./sql_migrations:/migrations:ro
+    # -h 127.0.0.1, not the default socket. During initdb the entrypoint runs a
+    # temporary server that listens on the unix socket only, so a socket-mode
+    # pg_isready reports healthy while the schema is still being applied and the
+    # service starts against half a database.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  nats:
+    # -alpine, not the default image: the default is scratch-based and has no
+    # shell, so it cannot carry a healthcheck.
+    image: nats:2.10-alpine
+    # -js is required, not optional. audit_helper publishes through
+    # JetStreamContext; against a server without JetStream the connection fails
+    # and the service exits at startup.
+    command: ["-js", "-sd", "/data"]
+    volumes:
+      - natsdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 4222 || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  sample-project:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_USERNAME: ${COMPOSE_POSTGRES_USER:-sampleproject}
+      POSTGRESQL_PASSWORD: ${COMPOSE_POSTGRES_PASSWORD:-sampleproject}
+      POSTGRESQL_DBNAME: ${COMPOSE_POSTGRES_DB:-sampleproject}
+      POSTGRESQL_SSLMODE: disable
+      POSTGRESQL_DEFAULTSCHEMA: public
+
+      NATS_HOST: nats
+      NATS_PORT: "4222"
+      NATS_AUDIT_SUBJECT: audit.sample-project.teacher
+      NATS_AUDIT_STREAM: AUDIT
+
+      SERVER_PORT: "8080"
+      SERVER_VERSION: ${COMPOSE_SERVER_VERSION:-1.0.0}
+
+      # FEAT-001 has no authentication - every route uses WhitelistValidator
+      # (architecture A2) - so this is never verified. It is set only because
+      # NewHTTPController takes it.
+      TOKEN_KEY_FIXED: local-development-fixed-token
+
+      # The schema stores `timestamp without time zone`, so the zone here is
+      # what CURRENT_TIMESTAMP converts into on every write. Left as a variable
+      # rather than pinned, because which zone the timestamps should read in is
+      # a decision about the deployment, not about this feature.
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${COMPOSE_SERVER_PORT:-8080}:8080"
+    # The service connects to Postgres and NATS during Init and exits on
+    # failure, so the health gating above is the primary ordering mechanism and
+    # this is the backstop for the very first boot, when a stream may not exist
+    # yet on the NATS side.
+    restart: unless-stopped
+    healthcheck:
+      # busybox wget is already in alpine - no extra package for this.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+volumes:
+  pgdata:
+  natsdata:
